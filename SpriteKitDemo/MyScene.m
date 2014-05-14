@@ -19,6 +19,8 @@
 @property (strong, nonatomic) SKLabelNode *healthLabel;
 @property (strong, nonatomic) SKLabelNode *gameOverLabel;
 @property (assign, nonatomic) NSInteger shipHealth;
+@property (strong, nonatomic) SKLabelNode *scoreLabel;
+@property (assign, nonatomic) NSInteger score;
 @property (strong, nonatomic) SKSpriteNode *restartButton;
 @end
 
@@ -30,25 +32,33 @@ const uint32_t asteroidCategory = 0x1 << 3;
 
 -(id)initWithSize:(CGSize)size {    
     if (self = [super initWithSize:size]) {
-        /* Setup your scene here */
-        
+
+        //Set up physics for scene
         self.backgroundColor = [SKColor colorWithWhite:0.0 alpha:1];
         self.physicsBody = [SKPhysicsBody bodyWithEdgeLoopFromRect:CGRectMake(0, 0, self.size.width, self.size.height + 100)];
         self.physicsWorld.gravity = CGVectorMake(0, -8);
         self.physicsWorld.contactDelegate = self;
 
+        //Keep track of health
         self.healthLabel = [[SKLabelNode alloc] initWithFontNamed:@"Chalkduster"];
         self.healthLabel.fontSize = 18;
-        self.healthLabel.position = CGPointMake(100, self.size.height-50);
+        self.healthLabel.position = CGPointMake(75, self.size.height-50);
         self.shipHealth = 10;
-        self.healthLabel.text = [NSString stringWithFormat:@"Health: %lu", (long)self.shipHealth];
+        self.healthLabel.text = [NSString stringWithFormat:@"Health: %d", self.shipHealth];
         self.healthLabel.zPosition = 50;
         [self addChild:self.healthLabel];
 
-//        [self.gameOverLabel setHidden:YES];
+        //Keep track of score
+        self.scoreLabel = [[SKLabelNode alloc] initWithFontNamed:@"Chalkduster"];
+        self.scoreLabel.fontSize = 18;
+        self.scoreLabel.position = CGPointMake(250, self.size.height-50);
+        self.score = 0;
+        self.scoreLabel.text = [NSString stringWithFormat:@"Score: %d", self.score];
+        self.scoreLabel.zPosition = 50;
+        [self addChild:self.scoreLabel];
 
+        //Set up ship
         self.ship = [SKSpriteNode spriteNodeWithImageNamed:@"Spaceship"];
-
         self.ship.position = CGPointMake(CGRectGetMidX(self.frame)-100, CGRectGetMidY(self.frame)+150);
         self.ship.physicsBody = [SKPhysicsBody bodyWithRectangleOfSize:self.ship.frame.size];
         [self.ship.physicsBody setLinearDamping:3];
@@ -56,10 +66,12 @@ const uint32_t asteroidCategory = 0x1 << 3;
         self.ship.physicsBody.contactTestBitMask = asteroidCategory;
         self.ship.zPosition = 20;
 
+        //Add engine fire
         NSString *myParticlePath = [[NSBundle mainBundle] pathForResource:@"EngineFire" ofType:@"sks"];
         self.fire = [NSKeyedUnarchiver unarchiveObjectWithFile:myParticlePath];
         [self addChild:self.fire];
 
+        //scale ship and add to scene
         [self.ship setScale:0.2];
         [self addChild:self.ship];
 
@@ -80,6 +92,7 @@ const uint32_t asteroidCategory = 0x1 << 3;
     asteroid2.position = CGPointMake(400, randY2*50);
     [self.asteroidArray addObject:asteroid];
     [self.asteroidArray addObject:asteroid2];
+    self.score += 1;
 
 }
 -(void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
@@ -127,14 +140,14 @@ const uint32_t asteroidCategory = 0x1 << 3;
             [self.asteroidArray removeObject:currentAsteroid];
         }
     }];
-    self.healthLabel.text = [NSString stringWithFormat:@"Health: %ld", (long)self.shipHealth];
-    if (self.shipHealth == 0)
+    self.healthLabel.text = [NSString stringWithFormat:@"Health: %d", self.shipHealth];
+    if (self.shipHealth <= 0)
     {
         [self gameOver];
         self.paused = YES;
         self.scene.view.paused = YES;
     }
-    NSLog(@"%d", self.asteroidArray.count);
+    self.scoreLabel.text = [NSString stringWithFormat:@"Score: %d", self.score];
 }
 
 - (void)gameOver
@@ -165,6 +178,7 @@ const uint32_t asteroidCategory = 0x1 << 3;
     [self.gameOverLabel removeFromParent];
     [self.restartButton removeFromParent];
     self.shipHealth = 10;
+    self.score = 0;
     self.ship.position = CGPointMake(CGRectGetMidX(self.frame)-100, CGRectGetMidY(self.frame)+150);
     for (Asteroid *asteroid in self.asteroidArray)
     {

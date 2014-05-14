@@ -27,6 +27,14 @@
         self.physicsBody.mass = 50;
         self.physicsBody.dynamic = NO;
         self.physicsBody.friction = .9;
+
+        #define ARC4RANDOM_MAX      0x100000000
+        double speed = ((double)arc4random() / ARC4RANDOM_MAX)+1;
+        double direction = speed < 1.5? M_PI : -M_PI;
+        NSLog(@"speed: %f", speed);
+        SKAction *action = [SKAction rotateByAngle:direction duration:speed];
+
+        [self runAction:[SKAction repeatActionForever:action]];
     }
     return self;
 }
